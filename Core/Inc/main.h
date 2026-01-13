@@ -60,18 +60,38 @@ void Error_Handler(void);
 #define B1_Pin GPIO_PIN_13
 #define B1_GPIO_Port GPIOC
 #define B1_EXTI_IRQn EXTI15_10_IRQn
+#define SW_DESACTIVAR_Pin GPIO_PIN_0
+#define SW_DESACTIVAR_GPIO_Port GPIOC
+#define SW_BARRERA_Pin GPIO_PIN_1
+#define SW_BARRERA_GPIO_Port GPIOC
+#define BTN_INGRESO_Pin GPIO_PIN_0
+#define BTN_INGRESO_GPIO_Port GPIOA
+#define BTN_EGRESO_Pin GPIO_PIN_1
+#define BTN_EGRESO_GPIO_Port GPIOA
 #define USART_TX_Pin GPIO_PIN_2
 #define USART_TX_GPIO_Port GPIOA
 #define USART_RX_Pin GPIO_PIN_3
 #define USART_RX_GPIO_Port GPIOA
+#define BTN_MODE_Pin GPIO_PIN_4
+#define BTN_MODE_GPIO_Port GPIOA
 #define LD2_Pin GPIO_PIN_5
 #define LD2_GPIO_Port GPIOA
+#define LED_ALERT_Pin GPIO_PIN_7
+#define LED_ALERT_GPIO_Port GPIOA
+#define BTN_ENTER_Pin GPIO_PIN_0
+#define BTN_ENTER_GPIO_Port GPIOB
+#define LED_MOTOR_MIN_Pin GPIO_PIN_7
+#define LED_MOTOR_MIN_GPIO_Port GPIOC
+#define LED_MOTOR_MAX_Pin GPIO_PIN_9
+#define LED_MOTOR_MAX_GPIO_Port GPIOA
 #define TMS_Pin GPIO_PIN_13
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14
 #define TCK_GPIO_Port GPIOA
 #define SWO_Pin GPIO_PIN_3
 #define SWO_GPIO_Port GPIOB
+#define LED_SYSTEM_Pin GPIO_PIN_6
+#define LED_SYSTEM_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
