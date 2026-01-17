@@ -90,6 +90,8 @@ void Error_Handler(void);
 #define TCK_GPIO_Port GPIOA
 #define SWO_Pin GPIO_PIN_3
 #define SWO_GPIO_Port GPIOB
+#define BUZZER_Pin GPIO_PIN_5
+#define BUZZER_GPIO_Port GPIOB
 #define LED_SYSTEM_Pin GPIO_PIN_6
 #define LED_SYSTEM_GPIO_Port GPIOB
 

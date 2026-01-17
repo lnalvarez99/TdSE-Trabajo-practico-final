@@ -54,21 +54,71 @@
 #define G_TASK_ACT_CNT_INIT			0ul
 #define G_TASK_ACT_TICK_CNT_INI		0ul
 
-#define DEL_LED_XX_PUL				250ul
-#define DEL_LED_XX_BLI				500ul
-#define DEL_LED_XX_MIN				0ul
+#define DEL_LED_PUL				250ul
+#define DEL_LED_BLI				500ul
+#define DEL_LED_MIN				0ul
 
 /********************** internal data declaration ****************************/
 const task_actuator_cfg_t task_actuator_cfg_list[] = {
-	{ID_LED_A,  LED_A_PORT,  LED_A_PIN, LED_A_ON,  LED_A_OFF,
-	 DEL_LED_XX_BLI, DEL_LED_XX_PUL}
+		// 1. MOTOR VELOCIDAD MÁXIMA (LED 1 - PA9)
+		    {
+		        ID_ACT_MOTOR_MAX,
+		        LED_MOTOR_MAX_PORT,
+		        LED_MOTOR_MAX_PIN,
+		        LED_MOTOR_MAX_ON,       // Active High (board.h)
+		        LED_MOTOR_MAX_OFF,
+				DEL_LED_MIN,                      // No usa Blink
+				DEL_LED_MIN	                       // No usa Pulse
+		    },
+
+		    // 2. MOTOR VELOCIDAD MÍNIMA (LED 2 - PC7)
+		    {
+		        ID_ACT_MOTOR_MIN,
+		        LED_MOTOR_MIN_PORT,
+		        LED_MOTOR_MIN_PIN,
+		        LED_MOTOR_MIN_ON,
+		        LED_MOTOR_MIN_OFF,
+				DEL_LED_MIN,
+				DEL_LED_MIN
+		    },
+
+		    // 3. INDICADOR SISTEMA OK (LED 3 - PB6)
+		    {
+		        ID_ACT_SYSTEM_OK,
+		        LED_SYSTEM_PORT,
+		        LED_SYSTEM_PIN,
+		        LED_SYSTEM_ON,
+		        LED_SYSTEM_OFF,
+				DEL_LED_BLI,
+		        DEL_LED_PUL
+		    },
+
+		    // 4. ALERTA / BARRERA (LED 4 - PA7) -> PARPADEANTE
+		    {
+		        ID_ACT_ALERT,
+		        LED_ALERT_PORT,
+		        LED_ALERT_PIN,
+		        LED_ALERT_ON,
+		        LED_ALERT_OFF,
+				DEL_LED_BLI,                    // Blink rápido (250ms ON / 250ms OFF)
+				DEL_LED_PUL
+		    },
+
+			// 5. BUZZER
+		    {
+		        ID_ACT_BUZZER,
+		        BUZZER_PORT,
+		        BUZZER_PIN,
+		        BUZZER_ON,
+		        BUZZER_OFF,
+				DEL_LED_BLI,              // 0 = Sonido Continuo (Sin Blink), 250 = ululando
+				DEL_LED_PUL
+		    }
 };
 
 #define ACTUATOR_CFG_QTY	(sizeof(task_actuator_cfg_list)/sizeof(task_actuator_cfg_t))
 
-task_actuator_dta_t task_actuator_dta_list[] = {
-	{DEL_LED_XX_MIN, ST_LED_XX_OFF, EV_LED_XX_NOT_BLINK, false}
-};
+task_actuator_dta_t task_actuator_dta_list[ACTUATOR_CFG_QTY];
 
 #define ACTUATOR_DTA_QTY	(sizeof(task_actuator_dta_list)/sizeof(task_actuator_dta_t))
 
@@ -107,6 +157,16 @@ void task_actuator_init(void *parameters)
 		p_task_actuator_cfg = &task_actuator_cfg_list[index];
 		p_task_actuator_dta = &task_actuator_dta_list[index];
 
+		// --- INICIALIZACIÓN SEGURA ---
+		p_task_actuator_dta->state = ST_ACTUATOR_OFF;
+		p_task_actuator_dta->event = EV_ACTUATOR_OFF;
+		p_task_actuator_dta->flag = false;
+		p_task_actuator_dta->tick = 0;
+
+		/* Apagamos físicamente el actuador al inicio por seguridad */
+		HAL_GPIO_WritePin(p_task_actuator_cfg->gpio_port, p_task_actuator_cfg->pin, p_task_actuator_cfg->off_state);
+
+
 		/* Print out: Index & Task execution FSM */
 		LOGGER_LOG("   %s = %lu", GET_NAME(index), index);
 
@@ -119,7 +179,6 @@ void task_actuator_init(void *parameters)
 		b_event = p_task_actuator_dta->flag;
 		LOGGER_LOG("   %s = %s\r\n", GET_NAME(b_event), (b_event ? "true" : "false"));
 
-		HAL_GPIO_WritePin(p_task_actuator_cfg->gpio_port, p_task_actuator_cfg->pin, p_task_actuator_cfg->led_off);
 	}
 
 	g_task_actuator_tick_cnt = G_TASK_ACT_TICK_CNT_INI;
@@ -166,47 +225,120 @@ void task_actuator_update(void *parameters)
 			p_task_actuator_dta = &task_actuator_dta_list[index];
 
 			switch (p_task_actuator_dta->state)
-			{
-				case ST_LED_XX_OFF:
+						{
+							// --- ESTADO: APAGADO ---
+							case ST_ACTUATOR_OFF:
+								if (true == p_task_actuator_dta->flag)
+								{
+									p_task_actuator_dta->flag = false; // Consumimos evento
 
-					if ((true == p_task_actuator_dta->flag) && (EV_LED_XX_ON == p_task_actuator_dta->event))
-					{
-						p_task_actuator_dta->flag = false;
-						HAL_GPIO_WritePin(p_task_actuator_cfg->gpio_port, p_task_actuator_cfg->pin, p_task_actuator_cfg->led_on);
-						p_task_actuator_dta->state = ST_LED_XX_ON;
+									if (EV_ACTUATOR_ON == p_task_actuator_dta->event) {
+										HAL_GPIO_WritePin(p_task_actuator_cfg->gpio_port, p_task_actuator_cfg->pin, p_task_actuator_cfg->on_state);
+										p_task_actuator_dta->state = ST_ACTUATOR_ON;
+									}
+									else if (EV_ACTUATOR_BLINK == p_task_actuator_dta->event) {
+										// Iniciamos parpadeo: Encendemos y cargamos timer
+										HAL_GPIO_WritePin(p_task_actuator_cfg->gpio_port, p_task_actuator_cfg->pin, p_task_actuator_cfg->on_state);
+										p_task_actuator_dta->tick = p_task_actuator_cfg->tick_blink;
+										p_task_actuator_dta->state = ST_ACTUATOR_BLINK_ON;
+									}
+								}
+								break;
+
+							// --- ESTADO: ENCENDIDO ---
+							case ST_ACTUATOR_ON:
+								if (true == p_task_actuator_dta->flag)
+								{
+									p_task_actuator_dta->flag = false;
+
+									if (EV_ACTUATOR_OFF == p_task_actuator_dta->event) {
+										HAL_GPIO_WritePin(p_task_actuator_cfg->gpio_port, p_task_actuator_cfg->pin, p_task_actuator_cfg->off_state);
+										p_task_actuator_dta->state = ST_ACTUATOR_OFF;
+									}
+									// Si estamos ON y nos piden BLINK, pasamos directo
+									else if (EV_ACTUATOR_BLINK == p_task_actuator_dta->event) {
+										p_task_actuator_dta->tick = p_task_actuator_cfg->tick_blink;
+										p_task_actuator_dta->state = ST_ACTUATOR_BLINK_ON;
+									}
+								}
+								break;
+
+							// --- ESTADO: PARPADEO (Fase ENCENDIDO) ---
+							case ST_ACTUATOR_BLINK_ON:
+								// 1. Chequeo de Eventos (Prioridad)
+							    if (true == p_task_actuator_dta->flag)
+							    {
+							        p_task_actuator_dta->flag = false;
+
+							        // Caso A: Nos mandan APAGAR
+							        if (EV_ACTUATOR_OFF == p_task_actuator_dta->event) {
+							            HAL_GPIO_WritePin(p_task_actuator_cfg->gpio_port, p_task_actuator_cfg->pin, p_task_actuator_cfg->off_state);
+							            p_task_actuator_dta->state = ST_ACTUATOR_OFF;
+							            break;
+							        }
+							        // Caso B: Nos mandan ENCENDER FIJO (Detener parpadeo y quedar ON)
+							        else if (EV_ACTUATOR_ON == p_task_actuator_dta->event) {
+							            // Ya estamos encendidos físicamente en esta fase, solo cambiamos estado
+							            // (Opcional: forzar escritura por seguridad)
+							            HAL_GPIO_WritePin(p_task_actuator_cfg->gpio_port, p_task_actuator_cfg->pin, p_task_actuator_cfg->on_state);
+							            p_task_actuator_dta->state = ST_ACTUATOR_ON;
+							            break;
+							        }
+							    }
+
+							    // 2. Lógica de Tiempo
+							    if (p_task_actuator_dta->tick > 0) {
+							        p_task_actuator_dta->tick--;
+							    } else {
+							        // Tiempo cumplido -> Apagar y cambiar fase
+							        HAL_GPIO_WritePin(p_task_actuator_cfg->gpio_port, p_task_actuator_cfg->pin, p_task_actuator_cfg->off_state);
+							        p_task_actuator_dta->tick = p_task_actuator_cfg->tick_blink;
+							        p_task_actuator_dta->state = ST_ACTUATOR_BLINK_OFF;
+							    }
+							    break;
+
+							// --- ESTADO: PARPADEO (Fase APAGADO) ---
+							case ST_ACTUATOR_BLINK_OFF:
+							    // 1. Chequeo de Eventos
+							    if (true == p_task_actuator_dta->flag)
+							    {
+							        p_task_actuator_dta->flag = false;
+
+							        // Caso A: Nos mandan APAGAR (Confirmar apagado y salir)
+							        if (EV_ACTUATOR_OFF == p_task_actuator_dta->event) {
+							            p_task_actuator_dta->state = ST_ACTUATOR_OFF;
+							            break;
+							        }
+							        // Caso B: Nos mandan ENCENDER FIJO
+							        else if (EV_ACTUATOR_ON == p_task_actuator_dta->event) {
+							            HAL_GPIO_WritePin(p_task_actuator_cfg->gpio_port, p_task_actuator_cfg->pin, p_task_actuator_cfg->on_state);
+							            p_task_actuator_dta->state = ST_ACTUATOR_ON;
+							            break;
+							        }
+							    }
+
+							    // 2. Lógica de Tiempo
+							    if (p_task_actuator_dta->tick > 0) {
+							        p_task_actuator_dta->tick--;
+							    } else {
+							        // Tiempo cumplido -> Encender y cambiar fase
+							        HAL_GPIO_WritePin(p_task_actuator_cfg->gpio_port, p_task_actuator_cfg->pin, p_task_actuator_cfg->on_state);
+							        p_task_actuator_dta->tick = p_task_actuator_cfg->tick_blink;
+							        p_task_actuator_dta->state = ST_ACTUATOR_BLINK_ON;
+							    }
+							    break;
+
+
+							// --- ESTADO: PULSO ---
+							case ST_ACTUATOR_PULSE:
+								// (Lógica similar para un solo disparo si la necesitas)
+								break;
+
+							default:
+								break;
+						}
 					}
-
-					break;
-
-				case ST_LED_XX_ON:
-
-					if ((true == p_task_actuator_dta->flag) && (EV_LED_XX_OFF == p_task_actuator_dta->event))
-					{
-						p_task_actuator_dta->flag = false;
-						HAL_GPIO_WritePin(p_task_actuator_cfg->gpio_port, p_task_actuator_cfg->pin, p_task_actuator_cfg->led_off);
-						p_task_actuator_dta->state = ST_LED_XX_OFF;
-					}
-
-					break;
-
-				case ST_LED_XX_BLINK_ON:
-
-					break;
-
-				case ST_LED_XX_BLINK_OFF:
-
-					break;
-
-				case ST_LED_XX_PULSE:
-
-					break;
-
-				default:
-
-					break;
+			    }
 			}
-		}
-    }
-}
 
 /********************** end of file ******************************************/

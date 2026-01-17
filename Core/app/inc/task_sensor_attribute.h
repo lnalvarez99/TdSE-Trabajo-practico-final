@@ -44,7 +44,7 @@ extern "C" {
 #endif
 
 /********************** inclusions *******************************************/
-
+#include "task_system_attribute.h"
 /********************** macros ***********************************************/
 
 /********************** typedef **********************************************/
@@ -108,8 +108,8 @@ typedef struct
 	uint16_t			pin;
 	GPIO_PinState		pressed;
 	uint32_t			tick_max;
-	task_sensor_ev_t	signal_up;
-	task_sensor_ev_t	signal_down;
+	task_system_ev_t	signal_up;
+	task_system_ev_t	signal_down;
 } task_sensor_cfg_t;
 
 typedef struct

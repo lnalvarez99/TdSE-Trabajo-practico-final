@@ -75,18 +75,28 @@ typedef enum task_system_ev {
 
 	    EV_PARADA_EMERGENCIA,   // Se activó el switch de corte
 	    EV_PARADA_RESTAURADA    // Se desactivó el switch de corte
+
+		/*EV_TIMEOUT  -> DETIENE LA ESCLARA (ST_SYS_IDLE) VEL = 0*/
 } task_system_ev_t;
 
 /* State of Task System */
-typedef enum task_system_st {ST_SYS_IDLE,
-							 ST_SYS_ACTIVE} task_system_st_t;
+typedef enum task_system_st {
+	    ST_SYS_IDLE,        // Modo Ahorro (Velocidad Mínima / Espera)
+	    ST_SYS_RUNNING,     // Modo Activo (Velocidad Máxima / Transportando)
+	    ST_SYS_EMERGENCY,   // Parada de Emergencia (Bloqueo)
+	    ST_SYS_SETUP_TIMEOUT,
+		ST_SYS_SETUP_THRESHOLD
+} task_system_st_t;
 
 typedef struct
 {
-	uint32_t			tick;
 	task_system_st_t	state;
 	task_system_ev_t	event;
 	bool				flag;
+	uint32_t            people_counter; // Cuenta cuántas personas hay en la escalera
+	uint32_t            timeout_stability; //Variable de Estabilidad (Watchdog)
+	uint32_t            cfg_timeout_max;    // Tiempo de espera (ej: 30000ms)
+	uint32_t            cfg_people_limit;   // Cantidad para cambio de velocidad
 } task_system_dta_t;
 
 /********************** external data declaration ****************************/

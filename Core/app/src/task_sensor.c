@@ -55,9 +55,9 @@
 #define G_TASK_SEN_CNT_INIT			0ul
 #define G_TASK_SEN_TICK_CNT_INI		0ul
 
-#define DEL_BTN_XX_MIN				0ul
-#define DEL_BTN_XX_MED				25ul
-#define DEL_BTN_XX_MAX				50ul
+#define DEL_BTN_MIN				0ul
+#define DEL_BTN_MED				25ul
+#define DEL_BTN_MAX				50ul
 
 /********************** internal data declaration ****************************/
 const task_sensor_cfg_t task_sensor_cfg_list[] = {
@@ -67,7 +67,7 @@ const task_sensor_cfg_t task_sensor_cfg_list[] = {
 		        BTN_INGRESO_PORT,       // Puerto (desde board.h)
 		        BTN_INGRESO_PIN,        // Pin (desde board.h)
 		        BTN_INGRESO_PRESSED,    // Nivel lógico activo
-		        DEL_BTN_XX_MAX,         // Tiempo de anti-rebote (50ms)
+		        DEL_BTN_MAX,         // Tiempo de anti-rebote (50ms)
 		        EV_SYS_IDLE,            // Al soltar: No hacemos nada
 		        EV_PERSONA_INGRESA      // Al presionar: Avisamos que entró alguien
 		    },
@@ -78,7 +78,7 @@ const task_sensor_cfg_t task_sensor_cfg_list[] = {
 		        BTN_EGRESO_PORT,
 		        BTN_EGRESO_PIN,
 		        BTN_EGRESO_PRESSED,
-		        DEL_BTN_XX_MAX,
+		        DEL_BTN_MAX,
 		        EV_SYS_IDLE,
 		        EV_PERSONA_EGRESA       // Avisamos que salió alguien
 		    },
@@ -89,7 +89,7 @@ const task_sensor_cfg_t task_sensor_cfg_list[] = {
 		        BTN_MODE_PORT,
 		        BTN_MODE_PIN,
 		        BTN_MODE_PRESSED,
-		        DEL_BTN_XX_MAX,
+		        DEL_BTN_MAX,
 		        EV_SYS_IDLE,
 		        EV_SISTEMA_TOGGLE       // Alternar entre Activo/Inactivo
 		    },
@@ -100,7 +100,7 @@ const task_sensor_cfg_t task_sensor_cfg_list[] = {
 		        BTN_ENTER_PORT,
 		        BTN_ENTER_PIN,
 		        BTN_ENTER_PRESSED,
-		        DEL_BTN_XX_MAX,
+		        DEL_BTN_MAX,
 		        EV_SYS_IDLE,
 		        EV_MENU_ENTER           // Confirmar acción
 		    },
@@ -112,7 +112,7 @@ const task_sensor_cfg_t task_sensor_cfg_list[] = {
 		        SW_BARRERA_PORT,
 		        SW_BARRERA_PIN,
 		        SW_BARRERA_ON,          // "Presionado" es ON (Barrera activa/cortada)
-		        DEL_BTN_XX_MAX,
+		        DEL_BTN_MAX,
 		        EV_BARRERA_RESTAURADA,  // Signal UP: Barrera libre
 		        EV_BARRERA_INTERRUMPIDA // Signal DOWN: Barrera cortada
 		    },
@@ -123,7 +123,7 @@ const task_sensor_cfg_t task_sensor_cfg_list[] = {
 		        SW_DESACTIVAR_PORT,
 		        SW_DESACTIVAR_PIN,
 		        SW_DESACTIVAR_ON,       // "Presionado" es ON (Sistema Apagado)
-		        DEL_BTN_XX_MAX,
+		        DEL_BTN_MAX,
 		        EV_PARADA_RESTAURADA,   // Signal UP: Sistema habilitado
 		        EV_PARADA_EMERGENCIA    // Signal DOWN: Parada inmediata
 		    }
@@ -168,7 +168,7 @@ void task_sensor_init(void *parameters)
 		p_task_sensor_dta = &task_sensor_dta_list[index];
 
 		/* Reseteamos las variables de estado a valores seguros por defecto */
-		p_task_sensor_dta->tick = DEL_BTN_XX_MIN; // Contador a 0
+		p_task_sensor_dta->tick = DEL_BTN_MIN; // Contador a 0
         p_task_sensor_dta->state = ST_BTN_UP;     // Asumimos suelto al inicio
         p_task_sensor_dta->event = EV_BTN_UP;     // Último evento conocido: Suelto
 
