@@ -30,6 +30,11 @@
 #define BTN_ENTER_PRESSED  GPIO_PIN_RESET
 #define BTN_ENTER_REALESED GPIO_PIN_SET
 
+#define BTN_ACTIVE_PORT     BTN_ACTIVE_GPIO_Port
+#define BTN_ACTIVE_PIN      BTN_ACTIVE_Pin
+#define BTN_ACTIVE_PRESSED  GPIO_ACTIVE_RESET
+#define BTN_ACTIVE_REALESED GPIO_ACTIVE_SET
+
 /* --- DIP SWITCHES (Estados Fijos - Active Low) --- */
 // Usan Pull-Up: 0 = Switch ON (Cerrado a GND), 1 = Switch OFF (Abierto)
 
@@ -42,6 +47,10 @@
 #define SW_DESACTIVAR_PIN    SW_DESACTIVAR_Pin
 #define SW_DESACTIVAR_ON     GPIO_PIN_RESET
 #define SW_DESACTIVAR_OFF    GPIO_PIN_SET
+
+/* --- SENSORES DE TEMPERATURA --- */
+#define ADC_LM35_CHANNEL       ADC_CHANNEL_X  // Reemplazar X por el canal real (ej: PC0 -> Ch10)
+#define ADC_INTERNAL_CHANNEL   ADC_CHANNEL_TEMPSENSOR
 
 /* --- SALIDAS (Actuadores / LEDs - Active High) --- */
 // 1 = Encendido, 0 = Apagado

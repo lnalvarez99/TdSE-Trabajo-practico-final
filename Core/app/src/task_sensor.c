@@ -83,7 +83,7 @@ const task_sensor_cfg_t task_sensor_cfg_list[] = {
 		        EV_PERSONA_EGRESA       // Avisamos que salió alguien
 		    },
 
-		    // --- 3. BOTÓN MODO / ACTIVAR (SW3) ---
+		    // --- 3. BOTÓN MODO  (SW3) ---
 		    {
 		        ID_BTN_MODE,
 		        BTN_MODE_PORT,
@@ -113,8 +113,8 @@ const task_sensor_cfg_t task_sensor_cfg_list[] = {
 		        SW_BARRERA_PIN,
 		        SW_BARRERA_ON,          // "Presionado" es ON (Barrera activa/cortada)
 		        DEL_BTN_MAX,
-		        EV_BARRERA_RESTAURADA,  // Signal UP: Barrera libre
-		        EV_BARRERA_INTERRUMPIDA // Signal DOWN: Barrera cortada
+		        EV_BARRERA_RESTAURADA,  // Signal UP: Barrera libre (No hay personas en la escalera)
+		        EV_BARRERA_INTERRUMPIDA // Signal DOWN: Barrera cortada (Hay personas en la escalera)
 		    },
 
 		    // --- 6. SWITCH DESACTIVAR (DIP 2) ---
@@ -122,10 +122,21 @@ const task_sensor_cfg_t task_sensor_cfg_list[] = {
 		        ID_SW_DESACTIVAR,
 		        SW_DESACTIVAR_PORT,
 		        SW_DESACTIVAR_PIN,
-		        SW_DESACTIVAR_ON,       // "Presionado" es ON (Sistema Apagado)
+		        SW_DESACTIVAR_ON,       // "Presionado" es ON (Sistema de control Apagado)
 		        DEL_BTN_MAX,
 		        EV_PARADA_RESTAURADA,   // Signal UP: Sistema habilitado
 		        EV_PARADA_EMERGENCIA    // Signal DOWN: Parada inmediata
+		    },
+
+		    // ---- 7. BOTON ACTIVAR SISTEMA ----
+		    {
+		    	ID_BTN_ACTIVE,
+				BTN_ACTIVE_PORT,
+				BTN_ACTIVE_PIN,
+				BTN_ACTIVE_PRESSED,
+				DEL_BTN_MAX,
+		    	EV_SYS_IDLE,      // Signal Up: Sistema en reposo
+				EV_SYS_ACTIVE	  // Signal Down: Resaturacion del sistema
 		    }
 };
 

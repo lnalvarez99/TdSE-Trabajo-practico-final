@@ -59,8 +59,10 @@ void task_display_update(void *parameters)
             // --- VISTA PRINCIPAL (Estado + Personas + Temps) ---
             // Fila 0: "ST:IDLE   P:00"
             // Fila 1: "Ti:35C   Ta:24C"
+            // ----------------------------------------------------
+
             case ST_DSP_MAIN_STATUS:
-                // Fila 0
+            	// Fila 0 (Estado y personas)
                 snprintf(line_buffer, 17, "ST:%-4s P:%02lu",
                          task_display_dta.system_state_str,
                          task_display_dta.people_count);
@@ -102,9 +104,9 @@ void task_display_update(void *parameters)
             // --- ALERTA / EMERGENCIA ---
             case ST_DSP_ALERT:
                 displayCharPositionWrite(0, 0);
-                displayStringWrite("!! EMERGENCIA !!");
+                displayStringWrite("! ATENCION !");
                 displayCharPositionWrite(0, 1);
-                displayStringWrite("REVISE BARRERA  ");
+                displayStringWrite("SYSTEM OFF");
                 break;
 
             default:
