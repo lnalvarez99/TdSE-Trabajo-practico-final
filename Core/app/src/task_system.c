@@ -51,6 +51,7 @@
 #include "task_system_interface.h"
 #include "task_actuator_attribute.h"
 #include "task_actuator_interface.h"
+#include "task_display_interface.h"
 
 /********************** macros and definitions *******************************/
 #define G_TASK_SYS_CNT_INI			0ul
@@ -137,6 +138,10 @@ void task_system_init(void *parameters)
 	    put_event_task_actuator(EV_ACTUATOR_OFF, ID_ACT_ALERT); //     0
 	    put_event_task_actuator(EV_ACTUATOR_OFF, ID_ACT_BUZZER); //    0
 
+	  // ESTADO INICIAL DEL DISPLAY
+	    Display_SetState(ST_DSP_MAIN_STATUS);
+	    Display_UpdateData("IDLE", 0);
+
 	    g_task_system_tick_cnt = G_TASK_SYS_TICK_CNT_INI;
 }
 
@@ -195,6 +200,9 @@ void task_system_update(void *parameters)
                     // Parpadeamos System OK para indicar que estamos en menú
                     put_event_task_actuator(EV_ACTUATOR_BLINK, ID_ACT_SYSTEM_OK);
 
+                    Display_SetState(ST_DSP_SETUP_TIMEOUT);
+                    Display_UpdateConfig(p_task_system_dta->timeout_stability, 0);
+
                     LOGGER_LOG("[SYS] Entrando a SETUP: Config Timeout\r\n");
                     p_task_system_dta->state = ST_SYS_SETUP_TIMEOUT;
                 }
@@ -214,6 +222,7 @@ void task_system_update(void *parameters)
                         put_event_task_actuator(EV_ACTUATOR_OFF, ID_ACT_MOTOR_MAX);
                     }
 
+                    Display_UpdateData("RUN ", p_task_system_dta->people_counter);
                     p_task_system_dta->state = ST_SYS_RUNNING;
                 }
                 // C. SEGURIDAD (Emergencias)
@@ -224,6 +233,7 @@ void task_system_update(void *parameters)
                     put_event_task_actuator(EV_ACTUATOR_OFF, ID_ACT_MOTOR_MAX);
                     put_event_task_actuator(EV_ACTUATOR_BLINK, ID_ACT_ALERT);
                     put_event_task_actuator(EV_ACTUATOR_ON,    ID_ACT_BUZZER);
+                    Display_SetState(ST_DSP_ALERT);
                     p_task_system_dta->state = ST_SYS_EMERGENCY;
                 }
             }
@@ -248,8 +258,8 @@ void task_system_update(void *parameters)
                     }
                     LOGGER_LOG("[SETUP] Nuevo Timeout: %lu ms\r\n", p_task_system_dta->cfg_timeout_max);
 
-                    // Feedback: Blink en Alerta para confirmar cambio
-                    put_event_task_actuator(EV_ACTUATOR_PULSE, ID_ACT_ALERT);
+                    Display_SetState(ST_DSP_SETUP_TIMEOUT);
+                    Display_UpdateConfig(p_task_system_dta->cfg_timeout_max, 0);
                 }
                 // OPCIÓN 2: CONFIRMAR Y SIGUIENTE (Botón ENTER)
                 else if (EV_MENU_ENTER == p_task_system_dta->event)
@@ -276,8 +286,8 @@ void task_system_update(void *parameters)
                     if (p_task_system_dta->cfg_people_limit > MAX_PERSONS) {
                         p_task_system_dta->cfg_people_limit = MIN_PERSONS;
                     }
-                    // Feedback visual de cambio (Parpadeo)
-                    put_event_task_actuator(EV_ACTUATOR_PULSE, ID_ACT_ALERT);
+                    Display_SetState(ST_DSP_SETUP_THRESHOLD);
+                    Display_UpdateConfig(p_task_system_dta->cfg_people_limit, 0);
                 }
 
                 // OPCIÓN B: SALIR Y GUARDAR (Botón ENTER)
@@ -320,16 +330,19 @@ void task_system_update(void *parameters)
                     if (EV_PERSONA_INGRESA == p_task_system_dta->event)
                     {
                         p_task_system_dta->people_counter++;
+                        Display_UpdateData("RUN ", p_task_system_dta->people_counter);
                         if (p_task_system_dta->people_counter >= p_task_system_dta->cfg_people_limit)
                         {
                             put_event_task_actuator(EV_ACTUATOR_OFF, ID_ACT_MOTOR_MIN);
                             put_event_task_actuator(EV_ACTUATOR_ON,  ID_ACT_MOTOR_MAX);
                         }
+
                     }
                     else if (EV_PERSONA_EGRESA == p_task_system_dta->event)
                     {
                         if (p_task_system_dta->people_counter > 0) {
                             p_task_system_dta->people_counter--;
+                            Display_UpdateData("RUN ", p_task_system_dta->people_counter);
                         }
 
                         // Condición Normal de Salida
@@ -337,6 +350,7 @@ void task_system_update(void *parameters)
                         {
                             put_event_task_actuator(EV_ACTUATOR_OFF, ID_ACT_MOTOR_MAX);
                             put_event_task_actuator(EV_ACTUATOR_ON,  ID_ACT_MOTOR_MIN);
+                            Display_UpdateData("IDLE", 0);
                             p_task_system_dta->state = ST_SYS_IDLE;
                         }
                     }
@@ -364,7 +378,7 @@ void task_system_update(void *parameters)
                         // Forzamos el retorno al estado de mínima energía.
 
                         p_task_system_dta->people_counter = 0; // Reset forzado
-
+                        Display_UpdateData("IDLE", 0);
                         put_event_task_actuator(EV_ACTUATOR_OFF, ID_ACT_MOTOR_MAX);
                         put_event_task_actuator(EV_ACTUATOR_ON,  ID_ACT_MOTOR_MIN);
 
