@@ -31,8 +31,8 @@
 
 #define BTN_ACTIVE_PORT     BTN_ACTIVE_GPIO_Port
 #define BTN_ACTIVE_PIN      BTN_ACTIVE_Pin
-#define BTN_ACTIVE_PRESSED  GPIO_ACTIVE_RESET
-#define BTN_ACTIVE_REALESED GPIO_ACTIVE_SET
+#define BTN_ACTIVE_PRESSED  GPIO_PIN_RESET
+#define BTN_ACTIVE_REALESED GPIO_PIN_SET
 
 /* --- DIP SWITCHES (Estados Fijos - Active Low) --- */
 // Usan Pull-Up: 0 = Switch ON (Cerrado a GND), 1 = Switch OFF (Abierto)

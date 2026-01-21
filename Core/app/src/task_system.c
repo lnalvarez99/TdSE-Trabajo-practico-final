@@ -175,7 +175,7 @@ void task_system_update(void *parameters)
         p_task_system_dta = &task_system_dta;
 
         /* 1. VERIFICAR SI HAY EVENTOS NUEVOS EN LA COLA */
-        if (true == any_event_task_system() & p_task_system_dta->state != ST_SYS_EMERGENCY ) {
+        if (true == any_event_task_system() && p_task_system_dta->state != ST_SYS_EMERGENCY) {
             p_task_system_dta->flag = true;
             p_task_system_dta->event = get_event_task_system();
         }
@@ -291,7 +291,7 @@ void task_system_update(void *parameters)
             if (true == p_task_system_dta->flag)
             {
                 p_task_system_dta->flag = false;
-                Display_SetStatus(ST_DSP_SETUP_THRESHOLD);
+                Display_SetState(ST_DSP_SETUP_THRESHOLD);
 
                 // OPCIÓN A: MODIFICAR VALOR (Botón MODE)
                 if (EV_SISTEMA_TOGGLE == p_task_system_dta->event)
@@ -397,6 +397,19 @@ void task_system_update(void *parameters)
                         Display_SetState(ST_DSP_ALERT);
                         p_task_system_dta->state = ST_SYS_EMERGENCY;
                     }
+                    // ENTRADA A MODO SETUP (Botón MODE)
+                    else if (EV_SISTEMA_TOGGLE == p_task_system_dta->event)
+	                {
+	                    // Parpadeamos System OK para indicar que estamos en menú
+	                    put_event_task_actuator(EV_ACTUATOR_BLINK, ID_ACT_SYSTEM_OK);
+
+	                    // Actualizamos Display
+	                    Display_SetState(ST_DSP_SETUP_TIMEOUT);
+	                    Display_UpdateConfig(p_task_system_dta->timeout_stability, 0);
+
+	                    LOGGER_LOG("[SYS] Entrando a SETUP: Config Timeout\r\n");
+	                    p_task_system_dta->state = ST_SYS_SETUP_TIMEOUT;
+	                }
                 }
 
                 // RAMA 2: SI NO HAY EVENTOS (Control por Tiempo)
@@ -429,7 +442,7 @@ void task_system_update(void *parameters)
                 if (true == p_task_system_dta->flag)
                 {
                 	// Salida solo si se restaura la condición segura
-                    if (EV_SYS_ACTIVADO == p_task_system_dta->event)
+                    if (EV_SYS_ACTIVE == p_task_system_dta->event)
                     {
                         put_event_task_actuator(EV_ACTUATOR_OFF, ID_ACT_BUZZER);
                         put_event_task_actuator(EV_ACTUATOR_OFF, ID_ACT_ALERT);
@@ -442,7 +455,7 @@ void task_system_update(void *parameters)
                         p_task_system_dta->cfg_timeout_max = TIMEOUT_MAX;
                         p_task_system_dta->state = ST_SYS_IDLE;
 
-                        Display_SetStatus(ST_DSP_MAIN_STATUS);
+                        Display_SetState(ST_DSP_MAIN_STATUS);
                         Display_UpdateData("IDLE ", p_task_system_dta->people_counter);
                         p_task_system_dta->flag = false;
                     }

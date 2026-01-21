@@ -10,6 +10,7 @@
 #include "task_temperature.h"
 #include "task_temperature_attribute.h"
 #include "task_display_interface.h"
+#include "board.h"
 
 // Nota: Ajustar los multiplicadores según voltaje (3.3V) y resolución (12 bits)
 // LM35: 10mV/°C. ADC = (Volts * 4095) / 3.3.
@@ -59,16 +60,23 @@ volatile uint32_t g_task_temp_tick_cnt;
 
 void task_temperature_init(void *parameters)
 {
-	// Inicialización de contadores globales
-    g_task_temp_cnt = G_TASK_TEMP_CNT_INI;
-    g_task_temp_tick_cnt = G_TASK_TEMP_TICK_CNT_INI;
+		// Debido a la sincronicacion de los ADC el sistema presentaba congelamiento
+		// se procedio a inicialiazarlos en desfase
+		// Inicialización de contadores globales
+	    g_task_temp_cnt = G_TASK_TEMP_CNT_INI;
+	    g_task_temp_tick_cnt = G_TASK_TEMP_TICK_CNT_INI;
 
-    // Inicialización similar a task_sensor_init
-    for (int i = 0; i < TEMP_SENSOR_QTY; i++) {
-        task_temp_dta_list[i].state = ST_ADC_IDLE;
-        task_temp_dta_list[i].tick = 1000; // Primer muestreo al 1s
-        task_temp_dta_list[i].last_temp = 0;
-    }
+	    // Inicialización de sensores
+	    // Sensor 0 (LM35): Arranca al segundo 1
+	    task_temp_dta_list[0].state = ST_ADC_IDLE;
+	    task_temp_dta_list[0].tick = 1000;
+	    task_temp_dta_list[0].last_temp = 0;
+
+	    // Sensor 1 (Interno): Arranca al segundo 1.5 (500ms después)
+	    // Esto evita que colisionen por el uso del ADC1
+	    task_temp_dta_list[1].state = ST_ADC_IDLE;
+	    task_temp_dta_list[1].tick = 1500;
+	    task_temp_dta_list[1].last_temp = 0;
 }
 
 void task_temperature_update(void *parameters)
@@ -92,7 +100,7 @@ void task_temperature_update(void *parameters)
 	    {
 			/* Protect shared resource (g_task_sensor_tick_cnt) */
 			__asm("CPSID i");	/* disable interrupts*/
-			if (G_TASK_SEN_TICK_CNT_INI < g_task_sensor_tick_cnt)
+			if (G_TASK_TEMP_TICK_CNT_INI < g_task_temp_tick_cnt)
 			{
 				g_task_temp_tick_cnt--;
 				b_time_update_required = true;

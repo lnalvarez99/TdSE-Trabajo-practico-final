@@ -48,7 +48,7 @@
 #include "task_system.h"
 #include "task_actuator.h"
 #include "task_sensor.h"
-#include "display.h"
+#include "task_display.h"
 #include "task_temperature.h"
 
 /********************** macros and definitions *******************************/

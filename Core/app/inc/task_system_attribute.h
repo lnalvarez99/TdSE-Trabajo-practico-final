@@ -77,7 +77,7 @@ typedef enum task_system_ev {
 	    EV_PARADA_EMERGENCIA,   // Se activó el switch de corte
 	    EV_PARADA_RESTAURADA,    // Se desactivó el switch de corte
 
-		EV_SYS_ACTIVADO
+		EV_SYS_ACTIVE
 
 		/*EV_TIMEOUT  -> DETIENE LA ESCLARA (ST_SYS_IDLE) VEL = 0*/
 } task_system_ev_t;
