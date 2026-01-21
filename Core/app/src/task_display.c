@@ -10,7 +10,7 @@
 #include "task_display_attribute.h"
 #include "task_display_interface.h"
 #include "display.h"
-#include <stdio.h> // Para snprintf
+#include <stdio.h>
 
 // Instancia de los datos
 task_display_dta_t task_display_dta;
@@ -38,12 +38,9 @@ void task_display_init(void *parameters)
 void task_display_update(void *parameters)
 {
     // Solo actualizamos si hay una petición de refresco (ahorra tiempo de CPU)
-    // Opcional: Agregar un timer para refresco periódico si los sensores varían mucho.
-
     if (task_display_dta.flag == true)
     {
-        task_display_dta.flag = false; // Consumimos el evento
-
+        task_display_dta.flag = false;
         switch (task_display_dta.state)
         {
             // --- PANTALLA DE INICIO ---
@@ -52,8 +49,6 @@ void task_display_update(void *parameters)
                 displayStringWrite("TdSE Grupo 09");
                 displayCharPositionWrite(0, 1);
                 displayStringWrite("Iniciando...");
-
-                // Transición automática a MAIN controlada por task_system o por tiempo
                 break;
 
             // --- VISTA PRINCIPAL (Estado + Personas + Temps) ---

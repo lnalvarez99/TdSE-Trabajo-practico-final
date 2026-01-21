@@ -2,25 +2,27 @@
  * task_temperature.c
  *
  *  Created on: Jan 20, 2026
- *      Author: lauta
+ *      Author: Lautaro Alvarez
  */
 
 
 #include "main.h"
 #include "task_temperature.h"
 #include "task_temperature_attribute.h"
-#include "task_display_interface.h" // Para enviar datos al display
+#include "task_display_interface.h"
 
 // Nota: Ajustar los multiplicadores según voltaje (3.3V) y resolución (12 bits)
 // LM35: 10mV/°C. ADC = (Volts * 4095) / 3.3.
 // Factor aprox: (3300 mV / 4095 steps) / 10 mV/°C = 0.0805 °C/step
 
 /********************** macros and definitions *******************************/
+
 #define G_TASK_TEMP_CNT_INI			0ul
 #define G_TASK_TEMP_TICK_CNT_INI	0ul
 
 /********************** external data declaration ****************************/
-extern ADC_HandleTypeDef hadc1; // Referencia al ADC configurado en main.c
+
+extern ADC_HandleTypeDef hadc1;
 
 /********************** internal data declaration ****************************/
 
@@ -46,10 +48,10 @@ const task_temperature_cfg_t task_temp_cfg_list[] = {
 
 #define TEMP_SENSOR_QTY (sizeof(task_temp_cfg_list)/sizeof(task_temperature_cfg_t))
 
-// Datos en RAM
 task_temperature_dta_t task_temp_dta_list[TEMP_SENSOR_QTY];
 
 /********************** external data definition *****************************/
+
 uint32_t g_task_temp_cnt;
 volatile uint32_t g_task_temp_tick_cnt;
 
@@ -101,7 +103,7 @@ void task_temperature_update(void *parameters)
 			}
 			__asm("CPSIE i");	/* enable interrupts*/
 
-    // Iteramos por cada sensor
+			// Iteramos por cada sensor
 			for (int i = 0; i < TEMP_SENSOR_QTY; i++)
 			{
 				task_temperature_dta_t *p_dta = &task_temp_dta_list[i];
@@ -118,11 +120,11 @@ void task_temperature_update(void *parameters)
 						break;
 
 					case ST_ADC_SELECT_CH:
-						// Configurar Canal ADC (requiere función HAL)
+
 						ADC_ChannelConfTypeDef sConfig = {0};
 						sConfig.Channel = p_cfg->channel;
 						sConfig.Rank = ADC_REGULAR_RANK_1;
-						sConfig.SamplingTime = ADC_SAMPLETIME_55CYCLES_5; // Tiempo estable
+						sConfig.SamplingTime = ADC_SAMPLETIME_239CYCLES_5; // Tiempo estable
 						HAL_ADC_ConfigChannel(p_cfg->hadc, &sConfig);
 
 						p_dta->state = ST_ADC_START;
@@ -141,11 +143,11 @@ void task_temperature_update(void *parameters)
 						break;
 
 					case ST_ADC_READ:
+
 						// Conversión Matemática
 						if (p_cfg->id == ID_TEMP_INTERNAL) {
 							// Fórmula específica del datasheet STM32F1 para sensor interno
 							// Temp = (V25 - Vsense) / Avg_Slope + 25
-							// (Simplificado aquí, requiere valores de calibración)
 							float vsense = (p_dta->raw_value * 3.3f) / 4095.0f;
 							p_dta->last_temp = (int32_t)((1.43f - vsense) / 0.0043f + 25.0f);
 						} else {
@@ -154,10 +156,8 @@ void task_temperature_update(void *parameters)
 						}
 
 						// Enviar al Display (Solo cuando tenemos ambos listos o individualmente)
-						// Aquí asumimos que actualizamos las variables globales del display
 						if (p_cfg->id == ID_TEMP_LM35)
 							Display_UpdateTemps(task_temp_dta_list[1].last_temp, p_dta->last_temp);
-
 						// Reiniciar ciclo
 						p_dta->tick = 500; // Muestrear cada 500ms
 						p_dta->state = ST_ADC_IDLE;

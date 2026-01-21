@@ -2,7 +2,7 @@
  * task_temperature_attribute.h
  *
  *  Created on: Jan 20, 2026
- *      Author: lauta
+ *      Author: Lautaro Alvarez
  */
 
 #ifndef TASK_INC_TASK_TEMPERATURE_ATTRIBUTE_H_
@@ -25,18 +25,16 @@ typedef enum {
     ID_TEMP_INTERNAL    // Sensor del Micro
 } task_temperature_id_t;
 
-// --- CONFIGURACIÓN (Estática - FLASH) ---
-// Similar a task_sensor_cfg_t
+
 typedef struct {
     task_temperature_id_t id;
-    ADC_HandleTypeDef* hadc;       // Handle del ADC (ej: &hadc1)
+    ADC_HandleTypeDef*    hadc;          // Handle del ADC (ej: &hadc1)
     uint32_t              channel;    // Canal ADC (ej: ADC_CHANNEL_1)
     float                 multiplier; // Factor para convertir ADC a Grados
     float                 offset;     // Offset si fuera necesario
 } task_temperature_cfg_t;
 
-// --- DATOS (Dinámica - RAM) ---
-// Similar a task_sensor_dta_t
+
 typedef struct {
     task_temperature_st_t state;
     uint32_t              tick;       // Contador para frecuencia de muestreo

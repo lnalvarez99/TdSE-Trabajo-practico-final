@@ -41,7 +41,6 @@ void Display_UpdateData(char *state_str, uint32_t people)
 
 void Display_UpdateConfig(uint32_t timeout, uint32_t limit)
 {
-    // Actualizamos las variables de configuración en la vista
     task_display_dta.cfg_timeout = timeout;
     task_display_dta.cfg_limit = limit;
 
@@ -54,10 +53,6 @@ void Display_UpdateTemps(int32_t internal, int32_t ambient)
     task_display_dta.temp_internal = internal;
     task_display_dta.temp_ambient = ambient;
 
-    // Nota: Si la temperatura fluctúa mucho, podrías comentar estas líneas
-    // para evitar que el display parpadee demasiado, y dejar que se actualice
-    // solo cuando cambie el estado u otro dato.
-    // Por ahora, lo dejamos activado para ver los cambios en tiempo real.
     task_display_dta.event = EV_DSP_REFRESH_REQ;
     task_display_dta.flag = true;
 }

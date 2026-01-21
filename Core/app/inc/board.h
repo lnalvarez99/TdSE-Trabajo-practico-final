@@ -8,7 +8,6 @@
  * ==============================================================================*/
 
 /* --- PULSADORES (Eventos Momentáneos - Active Low) --- */
-// Usan Pull-Up: 0 = Presionado, 1 = Suelto
 
 #define BTN_INGRESO_PORT     BTN_INGRESO_GPIO_Port
 #define BTN_INGRESO_PIN      BTN_INGRESO_Pin
@@ -49,11 +48,30 @@
 #define SW_DESACTIVAR_OFF    GPIO_PIN_SET
 
 /* --- SENSORES DE TEMPERATURA --- */
-#define ADC_LM35_CHANNEL       ADC_CHANNEL_X  // Reemplazar X por el canal real (ej: PC0 -> Ch10)
+#define ADC_LM35_CHANNEL       ADC_CHANNEL_6
 #define ADC_INTERNAL_CHANNEL   ADC_CHANNEL_TEMPSENSOR
 
+/* --- DISPLAY LCD 16x2  --- */
+
+#define LCD_RS_PORT     GPIOB
+#define LCD_RS_PIN      GPIO_PIN_12
+
+#define LCD_EN_PORT     GPIOB
+#define LCD_EN_PIN      GPIO_PIN_13
+
+#define LCD_D4_PORT     GPIOB
+#define LCD_D4_PIN      GPIO_PIN_14
+
+#define LCD_D5_PORT     GPIOB
+#define LCD_D5_PIN      GPIO_PIN_15
+
+#define LCD_D6_PORT     GPIOC
+#define LCD_D6_PIN      GPIO_PIN_6
+
+#define LCD_D7_PORT     GPIOC
+#define LCD_D7_PIN      GPIO_PIN_8
+
 /* --- SALIDAS (Actuadores / LEDs - Active High) --- */
-// 1 = Encendido, 0 = Apagado
 
 #define LED_MOTOR_MAX_PORT   LED_MOTOR_MAX_GPIO_Port
 #define LED_MOTOR_MAX_PIN    LED_MOTOR_MAX_Pin
