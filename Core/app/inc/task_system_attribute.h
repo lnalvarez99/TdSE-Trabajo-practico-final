@@ -71,7 +71,7 @@ typedef enum task_system_ev {
 		EV_SISTEMA_TOGGLE,      // Activar/Desactivar sistema (Botón Mode)
 	    EV_MENU_ENTER,          // Confirmar selección (Botón Enter)
 
-	    EV_BARRERA_INTERRUMPIDA,// Se cortó el haz de luz
+	    EV_BARRERA_INTERRUMPIDA,// Se cortó el haz de luz (Hay personas)
 	    EV_BARRERA_RESTAURADA,  // Se restauró el haz
 
 	    EV_PARADA_EMERGENCIA,   // Se activó el switch de corte

@@ -93,11 +93,11 @@ typedef enum task_sensor_st {ST_BTN_UP,
 
 /* Identifier of Task Sensor */
 typedef enum task_sensor_id {
-	    ID_BTN_INGRESO,     // Botón SW1
-	    ID_BTN_EGRESO,      // Botón SW2
-	    ID_BTN_MODE,        // Botón SW3
-	    ID_BTN_ENTER,       // Botón SW4
-		ID_BTN_ACTIVE,	    // <---- DEFINIR EL BOTON EN .ioc
+	    ID_BTN_INGRESO,     // Botón S1
+	    ID_BTN_EGRESO,      // Botón S2
+	    ID_BTN_MODE,        // Botón S3
+	    ID_BTN_ENTER,       // Botón S4
+		ID_BTN_ACTIVE,	    // Botón K16
 		ID_SW_BARRERA,      // Dip Switch 1 (Lo tratamos como botón para detectar flancos)
 	    ID_SW_DESACTIVAR    // Dip Switch 2
 } task_sensor_id_t;

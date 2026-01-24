@@ -16,7 +16,7 @@
 task_display_dta_t task_display_dta;
 
 // Buffer temporal para formatear texto (16 chars + null)
-static char line_buffer[17];
+static char line_buffer[18];
 
 void task_display_init(void *parameters)
 {
@@ -40,6 +40,7 @@ void task_display_update(void *parameters)
     // Solo actualizamos si hay una petición de refresco (ahorra tiempo de CPU)
     if (task_display_dta.flag == true)
     {
+    	HAL_Delay(10);
         task_display_dta.flag = false;
         switch (task_display_dta.state)
         {
@@ -49,6 +50,9 @@ void task_display_update(void *parameters)
                 displayStringWrite("TdSE Grupo 09");
                 displayCharPositionWrite(0, 1);
                 displayStringWrite("Iniciando...");
+                HAL_Delay(2000);
+                task_display_dta.state = ST_DSP_MAIN_STATUS;
+                task_display_dta.flag = true;
                 break;
 
             // --- VISTA PRINCIPAL (Estado + Personas + Temps) ---
@@ -58,18 +62,18 @@ void task_display_update(void *parameters)
 
             case ST_DSP_MAIN_STATUS:
             	// Fila 0 (Estado y personas)
-                snprintf(line_buffer, 17, "ST:%-4s P:%02lu",
-                         task_display_dta.system_state_str,
-                         task_display_dta.people_count);
-                displayCharPositionWrite(0, 0);
-                displayStringWrite(line_buffer);
+            	snprintf(line_buffer, sizeof(line_buffer), "ST:%-4s P:%02lu    ",
+            	         task_display_dta.system_state_str,
+            	         task_display_dta.people_count);
+            	displayCharPositionWrite(0, 0);
+            	displayStringWrite(line_buffer);
 
                 // Fila 1 (Temperaturas)
-                snprintf(line_buffer, 17, "Ti:%02ldC  Ta:%02ldC",
-                         task_display_dta.temp_internal,
-                         task_display_dta.temp_ambient);
-                displayCharPositionWrite(0, 1);
-                displayStringWrite(line_buffer);
+            	snprintf(line_buffer, sizeof(line_buffer), "Ti:%02ldC  Ta:%02ldC  ",
+            	         task_display_dta.temp_internal,
+            	         task_display_dta.temp_ambient);
+            	displayCharPositionWrite(0, 1);
+            	displayStringWrite(line_buffer);
                 break;
 
             // --- MENÚ SETUP: TIEMPO ---
@@ -77,9 +81,9 @@ void task_display_update(void *parameters)
             // Fila 1: ">> 30 Segundos"
             case ST_DSP_SETUP_TIMEOUT:
                 displayCharPositionWrite(0, 0);
-                displayStringWrite("CFG TIEMPO ESP: ");
+                displayStringWrite(" CFG TIEMPO ESP: ");
 
-                snprintf(line_buffer, 17, ">> %02lu Segundos", task_display_dta.cfg_timeout / 1000);
+                snprintf(line_buffer, 18, ">>> %02lu Segundos  ", task_display_dta.cfg_timeout / 1000);
                 displayCharPositionWrite(0, 1);
                 displayStringWrite(line_buffer);
                 break;
@@ -89,9 +93,9 @@ void task_display_update(void *parameters)
             // Fila 1: ">> 02 Personas"
             case ST_DSP_SETUP_THRESHOLD:
                 displayCharPositionWrite(0, 0);
-                displayStringWrite("CFG UMBRAL VEL: ");
+                displayStringWrite(" CFG UMBRAL VEL: ");
 
-                snprintf(line_buffer, 17, ">> %02lu Personas ", task_display_dta.cfg_limit);
+                snprintf(line_buffer, 18, ">>> %02lu Personas  ", task_display_dta.cfg_limit);
                 displayCharPositionWrite(0, 1);
                 displayStringWrite(line_buffer);
                 break;
@@ -99,9 +103,9 @@ void task_display_update(void *parameters)
             // --- ALERTA / EMERGENCIA ---
             case ST_DSP_ALERT:
                 displayCharPositionWrite(0, 0);
-                displayStringWrite("! ATENCION !");
+                displayStringWrite("  ! ATENCION !  ");
                 displayCharPositionWrite(0, 1);
-                displayStringWrite("SYSTEM OFF");
+                displayStringWrite("   SYSTEM OFF   ");
                 break;
 
             default:

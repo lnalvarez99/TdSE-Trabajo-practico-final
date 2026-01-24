@@ -95,7 +95,7 @@ int main(void)
   MX_USART2_UART_Init();
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
-
+  //test_lcd_boca_juniors();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -256,10 +256,10 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOA, LED_ALERT_Pin|LED_MOTOR_MAX_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, RS_Pin|EN_Pin|D4_Pin|D3_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, RS_Pin|EN_Pin|D4_Pin|D5_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, D2_Pin|D1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, D6_Pin|D7_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LED_MOTOR_MIN_GPIO_Port, LED_MOTOR_MIN_Pin, GPIO_PIN_SET);
@@ -279,8 +279,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : BTN_INGRESO_Pin BTN_EGRESO_Pin BTN_MODE_Pin BTN_ACTIVE_Pin */
-  GPIO_InitStruct.Pin = BTN_INGRESO_Pin|BTN_EGRESO_Pin|BTN_MODE_Pin|BTN_ACTIVE_Pin;
+  /*Configure GPIO pins : BTN_INGRESO_Pin BTN_EGRESO_Pin BTN_MODE_Pin */
+  GPIO_InitStruct.Pin = BTN_INGRESO_Pin|BTN_EGRESO_Pin|BTN_MODE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -298,21 +298,39 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(BTN_ENTER_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : RS_Pin EN_Pin D4_Pin D3_Pin
-                           BUZZER_Pin LED_SYSTEM_Pin */
-  GPIO_InitStruct.Pin = RS_Pin|EN_Pin|D4_Pin|D3_Pin
-                          |BUZZER_Pin|LED_SYSTEM_Pin;
+  /*Configure GPIO pins : RS_Pin EN_Pin D4_Pin D5_Pin */
+  GPIO_InitStruct.Pin = RS_Pin|EN_Pin|D4_Pin|D5_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : D6_Pin D7_Pin */
+  GPIO_InitStruct.Pin = D6_Pin|D7_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : LED_MOTOR_MIN_Pin */
+  GPIO_InitStruct.Pin = LED_MOTOR_MIN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(LED_MOTOR_MIN_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : BTN_ACTIVE_Pin */
+  GPIO_InitStruct.Pin = BTN_ACTIVE_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(BTN_ACTIVE_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : BUZZER_Pin LED_SYSTEM_Pin */
+  GPIO_InitStruct.Pin = BUZZER_Pin|LED_SYSTEM_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : D2_Pin LED_MOTOR_MIN_Pin D1_Pin */
-  GPIO_InitStruct.Pin = D2_Pin|LED_MOTOR_MIN_Pin|D1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);

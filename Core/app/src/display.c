@@ -1,166 +1,235 @@
 /*
  * display.c
- * Driver para Display LCD 16x2 (Modo 4 Bits)
- * Adaptado para usar definiciones de board.h
+ * Driver Optimizado para LCD 16x2 (Modo 4 Bits)
+ * Características:
+ * - Uso de DWT para delays de microsegundos (Alta Velocidad).
+ * - Fallback a HAL_Delay si DWT no está listo (Seguridad en Init).
+ * - Mapeo estricto a board.h
  */
 
 #include "main.h"
 #include "board.h"
 #include "display.h"
+#include "dwt.h"        // Necesario para los retardos de microsegundos
 #include <stdint.h>
+#include <stdbool.h>
 
-// Definiciones de tiempos (en milisegundos)
-#define LCD_DELAY_BOOT      50
-#define LCD_DELAY_INST      2   // Tiempo genérico para instrucciones
-#define LCD_DELAY_CLEAR     3   // Tiempo para Clear Display
+// --- DEFINICIONES DE COMANDOS LCD (HD44780) ---
+#define DISPLAY_IR_CLEAR_DISPLAY   0b00000001
+#define DISPLAY_IR_ENTRY_MODE_SET  0b00000100
+#define DISPLAY_IR_DISPLAY_CONTROL 0b00001000
+#define DISPLAY_IR_FUNCTION_SET    0b00100000
+#define DISPLAY_IR_SET_DDRAM_ADDR  0b10000000
 
-/* --- FUNCIONES PRIVADAS (Helpers) --- */
+#define DISPLAY_IR_ENTRY_MODE_SET_INCREMENT 0b00000010
+#define DISPLAY_IR_ENTRY_MODE_SET_DECREMENT 0b00000000
+#define DISPLAY_IR_ENTRY_MODE_SET_SHIFT     0b00000001
+#define DISPLAY_IR_ENTRY_MODE_SET_NO_SHIFT  0b00000000
 
-/**
- * @brief  Escribe un valor lógico (0 o 1) en un pin del LCD
- * mapeando los nombres genéricos a los pines de board.h
- */
+#define DISPLAY_IR_DISPLAY_CONTROL_DISPLAY_ON  0b00000100
+#define DISPLAY_IR_DISPLAY_CONTROL_DISPLAY_OFF 0b00000000
+#define DISPLAY_IR_DISPLAY_CONTROL_CURSOR_ON   0b00000010
+#define DISPLAY_IR_DISPLAY_CONTROL_CURSOR_OFF  0b00000000
+#define DISPLAY_IR_DISPLAY_CONTROL_BLINK_ON    0b00000001
+#define DISPLAY_IR_DISPLAY_CONTROL_BLINK_OFF   0b00000000
 
-static void displayPinWrite(uint8_t pinName, int value)
-{
-    switch(pinName) {
-        case DISPLAY_PIN_RS:
-            HAL_GPIO_WritePin(LCD_RS_PORT, LCD_RS_PIN, value);
-            break;
-        case DISPLAY_PIN_EN:
-            HAL_GPIO_WritePin(LCD_EN_PORT, LCD_EN_PIN, value);
-            break;
-        case DISPLAY_PIN_D4:
-            HAL_GPIO_WritePin(LCD_D4_PORT, LCD_D4_PIN, value);
-            break;
-        case DISPLAY_PIN_D5:
-            HAL_GPIO_WritePin(LCD_D5_PORT, LCD_D5_PIN, value);
-            break;
-        case DISPLAY_PIN_D6:
-            HAL_GPIO_WritePin(LCD_D6_PORT, LCD_D6_PIN, value);
-            break;
-        case DISPLAY_PIN_D7:
-            HAL_GPIO_WritePin(LCD_D7_PORT, LCD_D7_PIN, value);
-            break;
-        // RW está a GND físico, ignoramos DISPLAY_PIN_RW
-        default:
-            break;
-    }
-}
+#define DISPLAY_IR_FUNCTION_SET_8BITS    0b00010000
+#define DISPLAY_IR_FUNCTION_SET_4BITS    0b00000000
+#define DISPLAY_IR_FUNCTION_SET_2LINES   0b00001000
+#define DISPLAY_IR_FUNCTION_SET_1LINE    0b00000000
+#define DISPLAY_IR_FUNCTION_SET_5x10DOTS 0b00000100
+#define DISPLAY_IR_FUNCTION_SET_5x8DOTS  0b00000000
 
-/**
- * @brief  Envía medio byte (nibble) a los pines de datos D4-D7
- */
-static void displayDataBusWrite(uint8_t dataBus)
-{
-    displayPinWrite(DISPLAY_PIN_D4, (dataBus & 0x01));
-    displayPinWrite(DISPLAY_PIN_D5, (dataBus & 0x02) >> 1);
-    displayPinWrite(DISPLAY_PIN_D6, (dataBus & 0x04) >> 2);
-    displayPinWrite(DISPLAY_PIN_D7, (dataBus & 0x08) >> 3);
-}
+// Direcciones de memoria para 16x2
+#define DISPLAY_LINE1_ADDR 0x00
+#define DISPLAY_LINE2_ADDR 0x40
 
-/**
- * @brief  Genera el pulso de Enable para que el LCD lea los datos
- */
-static void displayEnablePulse(void)
-{
-    displayPinWrite(DISPLAY_PIN_EN, 1);
-    displayPinWrite(DISPLAY_PIN_EN, 0);
-}
+// Tipos de Mensaje
+#define DISPLAY_RS_INSTRUCTION 0
+#define DISPLAY_RS_DATA        1
 
-/**
- * @brief  Envía un byte completo en dos partes (Nibble Alto -> Nibble Bajo)
- * @param  value: El byte a enviar
- * @param  mode:  DISPLAY_PIN_RS (1 para Dato) o 0 (para Instrucción)
- */
-static void displayByteWrite(uint8_t value, uint8_t mode)
-{
-    // 1. Configurar RS (Comando o Caracter)
-    displayPinWrite(DISPLAY_PIN_RS, mode);
+// --- TIEMPOS OPTIMIZADOS (Microsegundos) ---
+#define US_PULSE_WIDTH      2   // Ancho del pulso EN (>450ns)
+#define US_INTER_NIBBLE     2   // Tiempo entre nibbles
+#define US_EXEC_STD         50  // Tiempo ejecución comando estándar (>37us)
+#define MS_EXEC_CLEAR       2   // Tiempo ejecución Clear/Home (>1.52ms)
 
-    // 2. Enviar Nibble Alto (Bits 7-4)
-    displayDataBusWrite((value >> 4) & 0x0F);
-    displayEnablePulse();
+/* --- VARIABLES PRIVADAS --- */
+static bool initial8BitCommunicationIsCompleted = false;
 
-    // 3. Enviar Nibble Bajo (Bits 3-0)
-    displayDataBusWrite(value & 0x0F);
-    displayEnablePulse();
+/* --- PROTOTIPOS --- */
+static void displayPinWrite(uint8_t pinName, int value);
+static void displayDataBusWrite(uint8_t dataByte);
+static void displayCodeWrite(bool type, uint8_t dataBus);
+static void lcdFastDelay(uint32_t us);
 
-    // Retardo para que el LCD procese
-    HAL_Delay(LCD_DELAY_INST);
-}
-
-/* --- FUNCIONES PÚBLICAS (API) --- */
+/* --- FUNCIONES PÚBLICAS --- */
 
 void displayInit(displayConnection_t connection)
 {
-    // Inicialización física de pines (asegurar nivel bajo)
-    HAL_GPIO_WritePin(LCD_RS_PORT, LCD_RS_PIN, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(LCD_EN_PORT, LCD_EN_PIN, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(LCD_D4_PORT, LCD_D4_PIN, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(LCD_D5_PORT, LCD_D5_PIN, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(LCD_D6_PORT, LCD_D6_PIN, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(LCD_D7_PORT, LCD_D7_PIN, GPIO_PIN_RESET);
-
-    HAL_Delay(LCD_DELAY_BOOT); // Esperar a que el voltaje se estabilice
-
-    // --- Secuencia de Inicialización Mágica (Datasheet HD44780) ---
-    // 1. Enviar 0x03 tres veces para resetear
+    // 1. Inicialización física de pines (Reset)
     displayPinWrite(DISPLAY_PIN_RS, 0);
+    displayPinWrite(DISPLAY_PIN_EN, 0);
+    displayPinWrite(DISPLAY_PIN_D4, 0);
+    displayPinWrite(DISPLAY_PIN_D5, 0);
+    displayPinWrite(DISPLAY_PIN_D6, 0);
+    displayPinWrite(DISPLAY_PIN_D7, 0);
 
-    displayDataBusWrite(0x03);
-    displayEnablePulse();
-    HAL_Delay(5);
+    // Espera inicial de encendido (Lenta y segura)
+    HAL_Delay(50);
 
-    displayDataBusWrite(0x03);
-    displayEnablePulse();
+    initial8BitCommunicationIsCompleted = false;
+
+    // --- Secuencia de Reset "Mágica" (8 bits mode) ---
+    displayCodeWrite(DISPLAY_RS_INSTRUCTION, DISPLAY_IR_FUNCTION_SET | DISPLAY_IR_FUNCTION_SET_8BITS);
+    HAL_Delay(5); // Usamos HAL_Delay porque DWT podría no estar listo aún en init
+
+    displayCodeWrite(DISPLAY_RS_INSTRUCTION, DISPLAY_IR_FUNCTION_SET | DISPLAY_IR_FUNCTION_SET_8BITS);
     HAL_Delay(1);
 
-    displayDataBusWrite(0x03);
-    displayEnablePulse();
+    displayCodeWrite(DISPLAY_RS_INSTRUCTION, DISPLAY_IR_FUNCTION_SET | DISPLAY_IR_FUNCTION_SET_8BITS);
     HAL_Delay(1);
 
-    // 2. Cambiar a modo 4-bits (Enviar 0x02)
-    displayDataBusWrite(0x02);
-    displayEnablePulse();
+    // --- Pasar a 4 bits ---
+    displayCodeWrite(DISPLAY_RS_INSTRUCTION, DISPLAY_IR_FUNCTION_SET | DISPLAY_IR_FUNCTION_SET_4BITS);
     HAL_Delay(1);
 
-    // A partir de aquí usamos displayByteWrite que envía los dos nibbles
-    // 3. Configurar Función: 4 bits, 2 líneas, 5x8 puntos (0x28)
-    displayByteWrite(0x28, 0);
+    // --- AHORA YA ESTAMOS EN MODO 4 BITS ---
+    initial8BitCommunicationIsCompleted = true;
 
-    // 4. Apagar Display (0x08)
-    displayByteWrite(0x08, 0);
+    // Configurar: 4 bits, 2 líneas, fuente 5x8
+    displayCodeWrite(DISPLAY_RS_INSTRUCTION,
+                     DISPLAY_IR_FUNCTION_SET |
+                     DISPLAY_IR_FUNCTION_SET_4BITS |
+                     DISPLAY_IR_FUNCTION_SET_2LINES |
+                     DISPLAY_IR_FUNCTION_SET_5x8DOTS);
 
-    // 5. Limpiar Display (0x01)
-    displayByteWrite(0x01, 0);
-    HAL_Delay(LCD_DELAY_CLEAR);
+    // Apagar display
+    displayCodeWrite(DISPLAY_RS_INSTRUCTION,
+                     DISPLAY_IR_DISPLAY_CONTROL |
+                     DISPLAY_IR_DISPLAY_CONTROL_DISPLAY_OFF);
 
-    // 6. Configurar Modo Entrada: Incrementar cursor, sin shift (0x06)
-    displayByteWrite(0x06, 0);
+    // Limpiar pantalla (Comando lento)
+    displayCodeWrite(DISPLAY_RS_INSTRUCTION, DISPLAY_IR_CLEAR_DISPLAY);
+    HAL_Delay(MS_EXEC_CLEAR);
 
-    // 7. Encender Display, Cursor Off, Blink Off (0x0C)
-    displayByteWrite(0x0C, 0);
+    // Modo de entrada
+    displayCodeWrite(DISPLAY_RS_INSTRUCTION,
+                     DISPLAY_IR_ENTRY_MODE_SET |
+                     DISPLAY_IR_ENTRY_MODE_SET_INCREMENT |
+                     DISPLAY_IR_ENTRY_MODE_SET_NO_SHIFT);
+
+    // Encender display
+    displayCodeWrite(DISPLAY_RS_INSTRUCTION,
+                     DISPLAY_IR_DISPLAY_CONTROL |
+                     DISPLAY_IR_DISPLAY_CONTROL_DISPLAY_ON |
+                     DISPLAY_IR_DISPLAY_CONTROL_CURSOR_OFF |
+                     DISPLAY_IR_DISPLAY_CONTROL_BLINK_OFF);
 }
 
 void displayCharPositionWrite(uint8_t x, uint8_t y)
 {
-    uint8_t addr = 0;
-
-    // Calcular dirección de memoria DDRAM
-    // Línea 0 empieza en 0x00, Línea 1 empieza en 0x40
-    if (y > 0) addr = 0x40;
+    uint8_t addr = DISPLAY_LINE1_ADDR;
+    if (y > 0) addr = DISPLAY_LINE2_ADDR;
     addr += x;
-
-    // Comando Set DDRAM Address (Bit 7 en 1)
-    displayByteWrite(0x80 | addr, 0);
+    displayCodeWrite(DISPLAY_RS_INSTRUCTION, DISPLAY_IR_SET_DDRAM_ADDR | addr);
 }
 
 void displayStringWrite(const char * str)
 {
-    while (*str)
+    while (*str) {
+        displayCodeWrite(DISPLAY_RS_DATA, *str++);
+    }
+}
+
+/* --- FUNCIONES PRIVADAS OPTIMIZADAS --- */
+
+/**
+ * @brief  Retardo híbrido: Usa DWT (us) si está activo, o HAL_Delay (ms) si no.
+ * Esto asegura que funcione en displayInit() y vuele en displayStringWrite().
+ */
+static void lcdFastDelay(uint32_t us)
+{
+    // Verificamos si el contador de ciclos DWT está habilitado
+    if (DWT->CTRL & DWT_CTRL_CYCCNTENA_Msk)
     {
-        displayByteWrite((uint8_t)*str, 1); // Modo 1 = Dato
-        str++;
+        uint32_t start = DWT->CYCCNT;
+        // Calculamos ciclos necesarios (SystemCoreClock debe estar definido en main.h/stm32f1xx_hal.h)
+        uint32_t cycles = us * (SystemCoreClock / 1000000);
+        while ((DWT->CYCCNT - start) < cycles);
+    }
+    else
+    {
+        // Fallback seguro para inicialización (mínimo 1ms)
+        uint32_t ms = us / 1000;
+        if (ms == 0 && us > 0) ms = 1;
+        HAL_Delay(ms);
+    }
+}
+
+/**
+ * @brief  Envío inteligente de datos con tiempos mínimos usando lcdFastDelay
+ */
+static void displayDataBusWrite(uint8_t dataBus)
+{
+    // 1. Enviar Nibble Alto (Bits 7-4)
+    displayPinWrite(DISPLAY_PIN_EN, 0);
+    displayPinWrite(DISPLAY_PIN_D7, (dataBus & 0x80) >> 7);
+    displayPinWrite(DISPLAY_PIN_D6, (dataBus & 0x40) >> 6);
+    displayPinWrite(DISPLAY_PIN_D5, (dataBus & 0x20) >> 5);
+    displayPinWrite(DISPLAY_PIN_D4, (dataBus & 0x10) >> 4);
+
+    // 2. Si estamos en modo 4 bits, enviamos Nibble Alto + Nibble Bajo
+    if (initial8BitCommunicationIsCompleted)
+    {
+        // Pulso Nibble Alto
+        displayPinWrite(DISPLAY_PIN_EN, 1);
+        lcdFastDelay(US_PULSE_WIDTH);
+        displayPinWrite(DISPLAY_PIN_EN, 0);
+        lcdFastDelay(US_INTER_NIBBLE);
+
+        // Enviar Nibble Bajo (Bits 3-0)
+        displayPinWrite(DISPLAY_PIN_D7, (dataBus & 0x08) >> 3);
+        displayPinWrite(DISPLAY_PIN_D6, (dataBus & 0x04) >> 2);
+        displayPinWrite(DISPLAY_PIN_D5, (dataBus & 0x02) >> 1);
+        displayPinWrite(DISPLAY_PIN_D4, (dataBus & 0x01));
+    }
+
+    // 3. Pulso Final (Nibble Bajo o Único Nibble en Init)
+    displayPinWrite(DISPLAY_PIN_EN, 1);
+    lcdFastDelay(US_PULSE_WIDTH);
+    displayPinWrite(DISPLAY_PIN_EN, 0);
+
+    // Tiempo de ejecución del comando (Dead time)
+    lcdFastDelay(US_EXEC_STD);
+}
+
+static void displayCodeWrite(bool type, uint8_t dataBus)
+{
+    if (type == DISPLAY_RS_INSTRUCTION)
+        displayPinWrite(DISPLAY_PIN_RS, DISPLAY_RS_INSTRUCTION);
+    else
+        displayPinWrite(DISPLAY_PIN_RS, DISPLAY_RS_DATA);
+
+    displayDataBusWrite(dataBus);
+}
+
+/**
+ * @brief  Capa física mapeada a board.h
+ */
+static void displayPinWrite(uint8_t pinName, int value)
+{
+    GPIO_PinState state = (value == 0) ? GPIO_PIN_RESET : GPIO_PIN_SET;
+
+    switch(pinName) {
+        case DISPLAY_PIN_D4: HAL_GPIO_WritePin(LCD_D4_PORT, LCD_D4_PIN, state); break;
+        case DISPLAY_PIN_D5: HAL_GPIO_WritePin(LCD_D5_PORT, LCD_D5_PIN, state); break;
+        // Nota: D6 y D7 están en GPIOC según tu board.h
+        case DISPLAY_PIN_D6: HAL_GPIO_WritePin(LCD_D6_PORT, LCD_D6_PIN, state); break;
+        case DISPLAY_PIN_D7: HAL_GPIO_WritePin(LCD_D7_PORT, LCD_D7_PIN, state); break;
+
+        case DISPLAY_PIN_RS: HAL_GPIO_WritePin(LCD_RS_PORT, LCD_RS_PIN, state); break;
+        case DISPLAY_PIN_EN: HAL_GPIO_WritePin(LCD_EN_PORT, LCD_EN_PIN, state); break;
+        default: break;
     }
 }

@@ -14,7 +14,7 @@ extern "C" {
 #endif
 
 /********************** inclusions *******************************************/
-#include "task_display_attribute.h" /
+#include "task_display_attribute.h"
 
 /********************** external functions declaration ***********************/
 
