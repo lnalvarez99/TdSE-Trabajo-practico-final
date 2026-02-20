@@ -28,10 +28,10 @@ typedef enum {
 
 typedef struct {
     task_temperature_id_t id;
-    ADC_HandleTypeDef*    hadc;          // Handle del ADC (ej: &hadc1)
-    uint32_t              channel;    // Canal ADC (ej: ADC_CHANNEL_1)
+    ADC_HandleTypeDef*    hadc;       // Handle del ADC
+    uint32_t              channel;    // Canal ADC
     float                 multiplier; // Factor para convertir ADC a Grados
-    float                 offset;     // Offset si fuera necesario
+    float                 offset;     // Offset
 } task_temperature_cfg_t;
 
 

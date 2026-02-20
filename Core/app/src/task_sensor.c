@@ -61,18 +61,18 @@
 
 /********************** internal data declaration ****************************/
 const task_sensor_cfg_t task_sensor_cfg_list[] = {
-		// --- 1. SENSOR INGRESO (SW1) ---
+		// --- 1. SENSOR INGRESO  ---
 		    {
 		        ID_BTN_INGRESO,         // ID
 		        BTN_INGRESO_PORT,       // Puerto (desde board.h)
 		        BTN_INGRESO_PIN,        // Pin (desde board.h)
 		        BTN_INGRESO_PRESSED,    // Nivel lógico activo
-		        DEL_BTN_MAX,         // Tiempo de anti-rebote (50ms)
+		        DEL_BTN_MAX,            // Tiempo de anti-rebote (50ms)
 		        EV_SYS_IDLE,            // Al soltar: No hacemos nada
 		        EV_PERSONA_INGRESA      // Al presionar: Avisamos que entró alguien
 		    },
 
-		    // --- 2. SENSOR EGRESO (SW2) ---
+		    // --- 2. SENSOR EGRESO  ---
 		    {
 		        ID_BTN_EGRESO,
 		        BTN_EGRESO_PORT,
@@ -83,7 +83,7 @@ const task_sensor_cfg_t task_sensor_cfg_list[] = {
 		        EV_PERSONA_EGRESA       // Avisamos que salió alguien
 		    },
 
-		    // --- 3. BOTÓN MODO  (SW3) ---
+		    // --- 3. BOTÓN MODO   ---
 		    {
 		        ID_BTN_MODE,
 		        BTN_MODE_PORT,
@@ -94,7 +94,7 @@ const task_sensor_cfg_t task_sensor_cfg_list[] = {
 		        EV_SISTEMA_TOGGLE       // Alternar entre Activo/Inactivo
 		    },
 
-		    // --- 4. BOTÓN ENTER / MENÚ (SW4) ---
+		    // --- 4. BOTÓN ENTER / MENÚ  ---
 		    {
 		        ID_BTN_ENTER,
 		        BTN_ENTER_PORT,

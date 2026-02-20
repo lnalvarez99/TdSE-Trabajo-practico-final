@@ -15,12 +15,14 @@
 // Instancia de los datos
 task_display_dta_t task_display_dta;
 
-// Buffer temporal para formatear texto (16 chars + null)
+// Buffer temporal para formatear texto (17 chars + null)
+// Nota: Aunque el display es de 16x2, la solucion para la problematica
+// de impresion de basura en el display fue aumentar el buffer
 static char line_buffer[18];
 
 void task_display_init(void *parameters)
 {
-    // 1. Inicializar Hardware del Display (Modo 4 bits según tu display.c)
+    // 1. Inicializar Hardware del Display
     displayInit(DISPLAY_CONNECTION_GPIO_4BITS);
 
     // 2. Inicializar Datos
@@ -37,7 +39,7 @@ void task_display_init(void *parameters)
 
 void task_display_update(void *parameters)
 {
-    // Solo actualizamos si hay una petición de refresco (ahorra tiempo de CPU)
+    // Solo actualizamos si hay una petición de refresco
     if (task_display_dta.flag == true)
     {
     	HAL_Delay(10);

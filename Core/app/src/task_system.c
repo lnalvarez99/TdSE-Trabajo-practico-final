@@ -118,8 +118,8 @@ void task_system_init(void *parameters)
 	    task_system_dta.flag = false;
 	    task_system_dta.people_counter = 0;
 	    task_system_dta.timeout_stability = TIMEOUT_MAX;
-	    task_system_dta.cfg_timeout_max = TIMEOUT_MAX; // 30 segundos
-	    task_system_dta.cfg_people_limit = MIN_PERSONS;          // Con 1 persona ya acelera
+	    task_system_dta.cfg_timeout_max = TIMEOUT_MAX;  // 30 segundos
+	    task_system_dta.cfg_people_limit = MIN_PERSONS; // Con 1 persona ya acelera
 
 	    /* --------VECTOR DE ESTADOS DE MI SISTEMA X=[x1,x2,x3,x4,x5------ */
 	    /*
@@ -340,7 +340,9 @@ void task_system_update(void *parameters)
                     // 4. Apagamos Alerta por si quedó prendida
                     put_event_task_actuator(EV_ACTUATOR_OFF, ID_ACT_ALERT);
 
+                    // El Sistema al salir del menu vuelve a la configuracion por defecto.
                     Display_SetState(ST_DSP_MAIN_STATUS);
+                    p_task_system_dta->people_counter = 0;
                     Display_UpdateData("IDLE", p_task_system_dta->people_counter);
 
                     p_task_system_dta->state = ST_SYS_IDLE;
@@ -403,14 +405,9 @@ void task_system_update(void *parameters)
                             p_task_system_dta->state = ST_SYS_IDLE;
                         }
                     }
-                    else if (EV_BARRERA_INTERRUMPIDA == p_task_system_dta->event)
+                    else if (EV_BARRERA_INTERRUMPIDA == p_task_system_dta->event || EV_BARRERA_RESTAURADA == p_task_system_dta->event)
                     {
-                    	// No hacemos nada extra, solo aseguramos que el timeout se reinició
-                    }
-                    else if(EV_BARRERA_RESTAURADA == p_task_system_dta->event)
-                    {
-                    	p_task_system_dta->people_counter=0;
-                    	Display_UpdateData("IDLE ", p_task_system_dta->people_counter);
+                    // No hacemos nada extra, solo aseguramos que el timeout se reinició
                     }
                     // Prioridad de Seguridad
                     else if (EV_PARADA_EMERGENCIA == p_task_system_dta->event)

@@ -1,0 +1,14 @@
+### **task_temperature.c**
+- **Purpose**:  
+  - Implements **temperature reading** functionality for both internal and external temperature sensors.  
+  - Provides methods to convert **ADC readings to temperature values** using predefined calibration constants.  
+  - Interacts with the **ADC** hardware to read temperature values from different channels.
+
+- **Features**:  
+  - **ADC-based temperature measurement** for both external (via ADC_CHANNEL_1) and internal (via ADC_TEMPSENSOR) sensors.  
+  - **Temperature conversion** using the **V25** and **AVG_SLOPE** calibration constants.  
+  - **Polls ADC readings** and converts them to temperature values, logging errors if the readings fail.
+
+- **Main Functions**:  
+  - task_temperature_init(): **Initializes temperature task** 
+  - task_temperature_update(): **Handles temperature sensors state transitions**

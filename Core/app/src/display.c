@@ -1,12 +1,3 @@
-/*
- * display.c
- * Driver Optimizado para LCD 16x2 (Modo 4 Bits)
- * Características:
- * - Uso de DWT para delays de microsegundos (Alta Velocidad).
- * - Fallback a HAL_Delay si DWT no está listo (Seguridad en Init).
- * - Mapeo estricto a board.h
- */
-
 #include "main.h"
 #include "board.h"
 #include "display.h"
@@ -75,14 +66,14 @@ void displayInit(displayConnection_t connection)
     displayPinWrite(DISPLAY_PIN_D6, 0);
     displayPinWrite(DISPLAY_PIN_D7, 0);
 
-    // Espera inicial de encendido (Lenta y segura)
+    // Espera inicial de encendido
     HAL_Delay(50);
 
     initial8BitCommunicationIsCompleted = false;
 
-    // --- Secuencia de Reset "Mágica" (8 bits mode) ---
+    //
     displayCodeWrite(DISPLAY_RS_INSTRUCTION, DISPLAY_IR_FUNCTION_SET | DISPLAY_IR_FUNCTION_SET_8BITS);
-    HAL_Delay(5); // Usamos HAL_Delay porque DWT podría no estar listo aún en init
+    HAL_Delay(5);
 
     displayCodeWrite(DISPLAY_RS_INSTRUCTION, DISPLAY_IR_FUNCTION_SET | DISPLAY_IR_FUNCTION_SET_8BITS);
     HAL_Delay(1);
@@ -94,7 +85,7 @@ void displayInit(displayConnection_t connection)
     displayCodeWrite(DISPLAY_RS_INSTRUCTION, DISPLAY_IR_FUNCTION_SET | DISPLAY_IR_FUNCTION_SET_4BITS);
     HAL_Delay(1);
 
-    // --- AHORA YA ESTAMOS EN MODO 4 BITS ---
+    // ---  MODO 4 BITS ---
     initial8BitCommunicationIsCompleted = true;
 
     // Configurar: 4 bits, 2 líneas, fuente 5x8
@@ -109,7 +100,7 @@ void displayInit(displayConnection_t connection)
                      DISPLAY_IR_DISPLAY_CONTROL |
                      DISPLAY_IR_DISPLAY_CONTROL_DISPLAY_OFF);
 
-    // Limpiar pantalla (Comando lento)
+    // Limpiar pantalla
     displayCodeWrite(DISPLAY_RS_INSTRUCTION, DISPLAY_IR_CLEAR_DISPLAY);
     HAL_Delay(MS_EXEC_CLEAR);
 
@@ -154,7 +145,6 @@ static void lcdFastDelay(uint32_t us)
     if (DWT->CTRL & DWT_CTRL_CYCCNTENA_Msk)
     {
         uint32_t start = DWT->CYCCNT;
-        // Calculamos ciclos necesarios (SystemCoreClock debe estar definido en main.h/stm32f1xx_hal.h)
         uint32_t cycles = us * (SystemCoreClock / 1000000);
         while ((DWT->CYCCNT - start) < cycles);
     }
@@ -224,7 +214,6 @@ static void displayPinWrite(uint8_t pinName, int value)
     switch(pinName) {
         case DISPLAY_PIN_D4: HAL_GPIO_WritePin(LCD_D4_PORT, LCD_D4_PIN, state); break;
         case DISPLAY_PIN_D5: HAL_GPIO_WritePin(LCD_D5_PORT, LCD_D5_PIN, state); break;
-        // Nota: D6 y D7 están en GPIOC según tu board.h
         case DISPLAY_PIN_D6: HAL_GPIO_WritePin(LCD_D6_PORT, LCD_D6_PIN, state); break;
         case DISPLAY_PIN_D7: HAL_GPIO_WritePin(LCD_D7_PORT, LCD_D7_PIN, state); break;
 

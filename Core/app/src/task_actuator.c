@@ -65,7 +65,7 @@ const task_actuator_cfg_t task_actuator_cfg_list[] = {
 		        ID_ACT_MOTOR_MAX,
 		        LED_MOTOR_MAX_PORT,
 		        LED_MOTOR_MAX_PIN,
-		        LED_MOTOR_MAX_ON,       // Active High (board.h)
+		        LED_MOTOR_MAX_ON,
 		        LED_MOTOR_MAX_OFF,
 				DEL_LED_MIN,                      // No usa Blink
 				DEL_LED_MIN	                       // No usa Pulse
@@ -270,16 +270,14 @@ void task_actuator_update(void *parameters)
 							    {
 							        p_task_actuator_dta->flag = false;
 
-							        // Caso A: Nos mandan APAGAR
+							        // Caso A:  APAGAR
 							        if (EV_ACTUATOR_OFF == p_task_actuator_dta->event) {
 							            HAL_GPIO_WritePin(p_task_actuator_cfg->gpio_port, p_task_actuator_cfg->pin, p_task_actuator_cfg->off_state);
 							            p_task_actuator_dta->state = ST_ACTUATOR_OFF;
 							            break;
 							        }
-							        // Caso B: Nos mandan ENCENDER FIJO (Detener parpadeo y quedar ON)
+							        // Caso B: ENCENDER FIJO (Detener parpadeo y quedar ON)
 							        else if (EV_ACTUATOR_ON == p_task_actuator_dta->event) {
-							            // Ya estamos encendidos físicamente en esta fase, solo cambiamos estado
-							            // (Opcional: forzar escritura por seguridad)
 							            HAL_GPIO_WritePin(p_task_actuator_cfg->gpio_port, p_task_actuator_cfg->pin, p_task_actuator_cfg->on_state);
 							            p_task_actuator_dta->state = ST_ACTUATOR_ON;
 							            break;
@@ -304,12 +302,12 @@ void task_actuator_update(void *parameters)
 							    {
 							        p_task_actuator_dta->flag = false;
 
-							        // Caso A: Nos mandan APAGAR (Confirmar apagado y salir)
+							        // Caso A: APAGAR
 							        if (EV_ACTUATOR_OFF == p_task_actuator_dta->event) {
 							            p_task_actuator_dta->state = ST_ACTUATOR_OFF;
 							            break;
 							        }
-							        // Caso B: Nos mandan ENCENDER FIJO
+							        // Caso B: ENCENDER FIJO
 							        else if (EV_ACTUATOR_ON == p_task_actuator_dta->event) {
 							            HAL_GPIO_WritePin(p_task_actuator_cfg->gpio_port, p_task_actuator_cfg->pin, p_task_actuator_cfg->on_state);
 							            p_task_actuator_dta->state = ST_ACTUATOR_ON;
@@ -331,7 +329,6 @@ void task_actuator_update(void *parameters)
 
 							// --- ESTADO: PULSO ---
 							case ST_ACTUATOR_PULSE:
-								// (Lógica similar para un solo disparo si la necesitas)
 								break;
 
 							default:

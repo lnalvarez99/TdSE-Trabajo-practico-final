@@ -1,9 +1,3 @@
-/*
- * display.h
- * Driver Header para LCD 16x2
- * TPF Grupo 09
- */
-
 #ifndef DISPLAY_H_
 #define DISPLAY_H_
 
@@ -18,8 +12,8 @@ extern "C" {
 // Tipos de conexión soportados
 typedef enum {
     DISPLAY_CONNECTION_GPIO_4BITS,
-    DISPLAY_CONNECTION_GPIO_8BITS,   // No implementado, pero reservado
-    DISPLAY_CONNECTION_I2C           // No implementado
+    DISPLAY_CONNECTION_GPIO_8BITS,
+    DISPLAY_CONNECTION_I2C
 } displayConnection_t;
 
 // Identificadores internos de pines del LCD

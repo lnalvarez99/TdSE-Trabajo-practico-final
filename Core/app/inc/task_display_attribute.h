@@ -29,7 +29,7 @@ typedef enum {
 
 typedef enum {
     EV_DSP_NO_EVENT,
-    EV_DSP_REFRESH_REQ      // Solicitud de refresco (alguien cambió un dato)
+    EV_DSP_REFRESH_REQ      // Solicitud de refresco
 } task_display_ev_t;
 
 

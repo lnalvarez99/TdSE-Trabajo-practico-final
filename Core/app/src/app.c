@@ -112,11 +112,10 @@ static void app_log_performance(void)
         uint32_t task_wcet = task_dta_list[i].WCET;
         total_wcet_us += task_wcet;
 
-        // Imprimimos el WCET individual con formato tabulado
+        // WCET individual
         LOGGER_LOG(" [%s]: \t%lu us\r\n", task_cfg_list[i].task_name, task_wcet);
     }
 
-    // El sistema corre con un tick base de 1ms (1000 microsegundos).
     // El peor caso absoluto asume que TODAS las tareas alcanzan su WCET en el mismo ciclo.
     cpu_usage_percent = ((float)total_wcet_us / 1000.0f) * 100.0f;
 
