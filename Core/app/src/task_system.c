@@ -403,10 +403,14 @@ void task_system_update(void *parameters)
                             p_task_system_dta->state = ST_SYS_IDLE;
                         }
                     }
-                    else if (EV_BARRERA_INTERRUMPIDA == p_task_system_dta->event ||
-                             EV_BARRERA_RESTAURADA == p_task_system_dta->event)
+                    else if (EV_BARRERA_INTERRUMPIDA == p_task_system_dta->event)
                     {
                     	// No hacemos nada extra, solo aseguramos que el timeout se reinició
+                    }
+                    else if(EV_BARRERA_RESTAURADA == p_task_system_dta->event)
+                    {
+                    	p_task_system_dta->people_counter=0;
+                    	Display_UpdateData("IDLE ", p_task_system_dta->people_counter);
                     }
                     // Prioridad de Seguridad
                     else if (EV_PARADA_EMERGENCIA == p_task_system_dta->event)

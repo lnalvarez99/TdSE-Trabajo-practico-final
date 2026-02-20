@@ -32,7 +32,7 @@ const task_temperature_cfg_t task_temp_cfg_list[] = {
     // 1. LM35 (Externo)
     {
         ID_TEMP_LM35,
-        &hadc1,            // Asumiendo que usas ADC1
+        &hadc1,
         ADC_LM35_CHANNEL,
         0.0805f,           // Multiplicador calculado
         0.0f               // Sin offset
@@ -42,7 +42,7 @@ const task_temperature_cfg_t task_temp_cfg_list[] = {
         ID_TEMP_INTERNAL,
         &hadc1,
         ADC_INTERNAL_CHANNEL,
-        0.0f,              // El interno usa una fórmula especial, no lineal simple
+        0.0f,
         0.0f
     }
 };
@@ -144,10 +144,17 @@ void task_temperature_update(void *parameters)
 						break;
 
 					case ST_ADC_WAITING:
-						if (HAL_ADC_PollForConversion(p_cfg->hadc, 1) == HAL_OK) {
+						if (HAL_ADC_PollForConversion(p_cfg->hadc, 10) == HAL_OK) {
 							p_dta->raw_value = HAL_ADC_GetValue(p_cfg->hadc);
+							HAL_ADC_Stop(p_cfg->hadc);
 							p_dta->state = ST_ADC_READ;
 						}
+						else
+						{
+					        // Recuperación ante falla de lectura
+					        HAL_ADC_Stop(p_cfg->hadc);
+					        p_dta->state = ST_ADC_IDLE; // Volvemos a intentar en el próximo ciclo
+					    }
 						break;
 
 					case ST_ADC_READ:

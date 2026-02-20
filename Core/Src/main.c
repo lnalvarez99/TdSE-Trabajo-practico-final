@@ -87,7 +87,7 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-  app_init();
+
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -95,7 +95,10 @@ int main(void)
   MX_USART2_UART_Init();
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
+
+  app_init();
   //test_lcd_boca_juniors();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -196,7 +199,7 @@ static void MX_ADC1_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN ADC1_Init 2 */
-
+  HAL_ADCEx_Calibration_Start(&hadc1);
   /* USER CODE END ADC1_Init 2 */
 
 }
@@ -343,16 +346,14 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-
-// Esta función es llamada AUTOMÁTICAMENTE por el hardware cuando ocurre la interrupción
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+int _write(int file, char *ptr, int len)
 {
-    // Verificamos qué pin disparó la interrupción (por si usamos varios botones)
-    if (GPIO_Pin == GPIO_PIN_13) // Si fue el Botón de Usuario (B1)
+    // Enviamos cada carácter al canal 0 del ITM
+    for (int i = 0; i < len; i++)
     {
-        // Cambiamos el estado del LED (Toggle)
-        HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+        ITM_SendChar((*ptr++));
     }
+    return len;
 }
 
 /* USER CODE END 4 */

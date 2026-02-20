@@ -64,6 +64,7 @@ typedef struct {
 	void (*task_update)(void *);	// Pointer to task (must be a
 									// 'void (void *)' function)
 	void *parameters;				// Pointer to parameters
+	const char *task_name;
 } task_cfg_t;
 
 typedef struct {
@@ -73,11 +74,11 @@ typedef struct {
 
 /********************** internal data declaration ****************************/
 const task_cfg_t task_cfg_list[]	= {
-		{task_sensor_init, 		task_sensor_update, 	NULL},
-		{task_actuator_init,	task_actuator_update, 	NULL},
-		{task_display_init,     task_display_update,    NULL},
-		{task_temperature_init, task_temperature_update, NULL},
-		{task_system_init, 		task_system_update, 	NULL},
+		{task_sensor_init, 		task_sensor_update, 	NULL, "TASK_SENSOR"},
+		{task_actuator_init,	task_actuator_update, 	NULL, "TASK_ACTUATOR"},
+		{task_display_init,     task_display_update,    NULL, "TASK_DISPLAY"},
+		{task_temperature_init, task_temperature_update, NULL, "TASK_TEMP"},
+		{task_system_init, 		task_system_update, 	NULL, "TASK_SYS"},
 };
 
 #define TASK_QTY	(sizeof(task_cfg_list)/sizeof(task_cfg_t))
@@ -93,8 +94,44 @@ uint32_t g_app_cnt;
 uint32_t g_app_time_us;
 
 volatile uint32_t g_app_tick_cnt;
+uint32_t g_log_timer_ticks = 0; // Temporizador para el reporte de rendimiento
 
 task_dta_t task_dta_list[TASK_QTY];
+
+static void app_log_performance(void)
+{
+    uint32_t total_wcet_us = 0;
+    float cpu_usage_percent = 0.0f;
+
+    LOGGER_LOG("\r\n========================================\r\n");
+    LOGGER_LOG("   REPORTE DE RENDIMIENTO (WCET) \r\n");
+    LOGGER_LOG("========================================\r\n");
+
+    for (uint32_t i = 0; i < TASK_QTY; i++)
+    {
+        uint32_t task_wcet = task_dta_list[i].WCET;
+        total_wcet_us += task_wcet;
+
+        // Imprimimos el WCET individual con formato tabulado
+        LOGGER_LOG(" [%s]: \t%lu us\r\n", task_cfg_list[i].task_name, task_wcet);
+    }
+
+    // El sistema corre con un tick base de 1ms (1000 microsegundos).
+    // El peor caso absoluto asume que TODAS las tareas alcanzan su WCET en el mismo ciclo.
+    cpu_usage_percent = ((float)total_wcet_us / 1000.0f) * 100.0f;
+
+    LOGGER_LOG("----------------------------------------\r\n");
+    LOGGER_LOG(" SUMA TOTAL WCET: \t%lu us\r\n", total_wcet_us);
+    LOGGER_LOG(" TIEMPO DISPONIBLE:\t1000 us (1 ms)\r\n");
+    LOGGER_LOG(" FACTOR USO CPU:  \t%.2f %%\r\n", cpu_usage_percent);
+
+    if (cpu_usage_percent >= 100.0f) {
+        LOGGER_LOG(" [!] ALERTA: SOBRECARGA DEL SISTEMA DETECTADA\r\n");
+    } else {
+        LOGGER_LOG(" [OK] SISTEMA ESTABLE Y CON MARGEN\r\n");
+    }
+    LOGGER_LOG("========================================\r\n\r\n");
+}
 
 /********************** external functions definition ************************/
 void app_init(void)
